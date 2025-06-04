@@ -59,8 +59,29 @@ export default function Home() {
         }
       } else {
         // For keyword search, we get an array of products in organic_results
-        // Filter out products without valid prices
+        // Filter out products without valid prices, Amazon Fresh products, Whole Foods products, and per-unit pricing
         const validProducts = (data.organic_results || []).filter((product: any) => {
+          // Skip Amazon Fresh products
+          if (product.buybox?.is_amazon_fresh === true || product.is_amazon_fresh === true) {
+            return false;
+          }
+
+          // Skip Whole Foods Market products
+          if (product.buybox?.is_whole_foods_market === true || product.is_whole_foods_market === true) {
+            return false;
+          }
+
+          // Skip products with per-unit pricing
+          const pricePerUnit = (product.price_per?.unit || '').toLowerCase();
+          if (pricePerUnit.includes('ounce') || pricePerUnit.includes('lb') || pricePerUnit.includes('gram')) {
+            return false;
+          }
+
+          // Skip products with price_per field (usually indicates per-unit pricing)
+          if (product.price_per) {
+            return false;
+          }
+
           // Extract price from all possible locations
           const price = extractPrice(product);
           return price !== null;
@@ -78,13 +99,13 @@ export default function Home() {
 
   // Helper function to extract price from product data
   const extractPrice = (product: any): number | null => {
-    // Try all possible price locations
+    // Try all possible price locations in order of preference
     const priceLocations = [
+      product.buybox?.price?.value, // Buybox price value (most reliable)
       product.price?.value, // Direct price value
-      product.price?.raw?.replace(/[^0-9.]/g, ''), // Raw price string
       product.extracted_price, // Extracted price
-      product.buybox?.price?.value, // Buybox price value
       product.buybox?.price?.raw?.replace(/[^0-9.]/g, ''), // Buybox raw price
+      product.price?.raw?.replace(/[^0-9.]/g, ''), // Raw price string
       product.original_price?.value, // Original price value
       product.original_price?.raw?.replace(/[^0-9.]/g, ''), // Original raw price
     ];

@@ -7,6 +7,30 @@ import { Star, ShoppingBag, Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import AddToCartModal from '@/app/components/AddToCartModal';
 import { Header } from '@/app/components/Header';
+import { extractAsin } from '@/app/utils/amazon';
+
+// Helper function to extract price from product data
+const extractPrice = (product: any): number | null => {
+  // Try all possible price locations in order of preference
+  const priceLocations = [
+    product.buybox?.price?.value, // Buybox price value (most reliable)
+    product.price?.value, // Direct price value
+    product.extracted_price, // Extracted price
+    product.buybox?.price?.raw?.replace(/[^0-9.]/g, ''), // Buybox raw price
+    product.price?.raw?.replace(/[^0-9.]/g, ''), // Raw price string
+    product.original_price?.value, // Original price value
+    product.original_price?.raw?.replace(/[^0-9.]/g, ''), // Original raw price
+  ];
+
+  // Find the first valid price
+  for (const price of priceLocations) {
+    if (price && !isNaN(Number(price)) && Number(price) > 0) {
+      return Number(price);
+    }
+  }
+
+  return null;
+};
 
 export default function ProductPage() {
   const params = useParams();
@@ -228,17 +252,17 @@ export default function ProductPage() {
 
               <div className="border-t border-gray-200 pt-6">
                 <h2 className="text-3xl font-bold text-blue-600 mb-4">
-                  {selectedVariant?.displayPrice || product.buybox?.price?.value || product.price?.value || product.extracted_price ? (
-                    `$${selectedVariant?.displayPrice || product.buybox?.price?.value || product.price?.value || product.extracted_price}`
-                  ) : (
-                    'Price not available'
-                  )}
+                  {(() => {
+                    const price = selectedVariant ? extractPrice(selectedVariant) : extractPrice(product);
+                    return price ? `$${price.toFixed(2)}` : 'Price not available';
+                  })()}
                 </h2>
                 {(selectedVariant?.original_price || product.original_price) && (
                   <p className="text-lg text-gray-500 line-through">
-                    {typeof (selectedVariant?.original_price || product.original_price) === 'string' 
-                      ? (selectedVariant?.original_price || product.original_price) 
-                      : `$${selectedVariant?.original_price || product.original_price}`}
+                    {(() => {
+                      const originalPrice = selectedVariant?.original_price || product.original_price;
+                      return typeof originalPrice === 'string' ? originalPrice : `$${originalPrice}`;
+                    })()}
                   </p>
                 )}
 
@@ -361,7 +385,7 @@ export default function ProductPage() {
         product={{
           title: product.title,
           variant: selectedVariant?.title,
-          price: selectedVariant?.displayPrice || product.buybox?.price?.value || product.price?.value || product.extracted_price,
+          price: selectedVariant ? extractPrice(selectedVariant) || 0 : extractPrice(product) || 0,
           thumbnail: selectedVariant?.thumbnail || product.thumbnail || product.main_image,
           asin: selectedVariant?.asin || product.asin,
         }}
