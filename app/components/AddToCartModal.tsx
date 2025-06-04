@@ -76,7 +76,7 @@ export default function AddToCartModal({ isOpen, onClose, product, onBalanceUpda
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 1;
   const [refreshingQuote, setRefreshingQuote] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState<Currency>('credit');
+  const [selectedCurrency, setSelectedCurrency] = useState<Currency>('usdc');
   const [refreshingBalance, setRefreshingBalance] = useState(false);
 
   // Get chain name from chainId
@@ -838,8 +838,8 @@ export default function AddToCartModal({ isOpen, onClose, product, onBalanceUpda
                         onChange={(e) => setSelectedCurrency(e.target.value as Currency)}
                         className="w-full appearance-none rounded-lg border-2 border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-sm hover:border-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                       >
-                        <option value="credit">CREDITS</option>
                         <option value="usdc">USDC</option>
+                        <option value="credit">CREDITS</option>
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                         <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
