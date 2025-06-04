@@ -27,6 +27,7 @@ Create a `.env.local` file in the root directory with the following variables:
 CROSSMINT_API_KEY=your_crossmint_api_key
 SEARCH_API_KEY=your_search_api_key
 NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_wallet_connect_project_id
+NEXT_PUBLIC_CROSSMINT_ENV=staging
 ```
 
 ### Installation
