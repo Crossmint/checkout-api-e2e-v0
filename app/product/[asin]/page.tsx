@@ -11,24 +11,74 @@ import { extractAsin } from '@/app/utils/amazon';
 
 // Helper function to extract price from product data
 const extractPrice = (product: any): number | null => {
+  console.log('Extracting price from product:', JSON.stringify(product, null, 2));
+
   // Try all possible price locations in order of preference
   const priceLocations = [
-    product.buybox?.price?.value, // Buybox price value (most reliable)
-    product.price?.value, // Direct price value
-    product.extracted_price, // Extracted price
-    product.buybox?.price?.raw?.replace(/[^0-9.]/g, ''), // Buybox raw price
-    product.price?.raw?.replace(/[^0-9.]/g, ''), // Raw price string
-    product.original_price?.value, // Original price value
-    product.original_price?.raw?.replace(/[^0-9.]/g, ''), // Original raw price
+    // Buybox prices
+    product.buybox?.price?.value,
+    product.buybox?.price?.raw?.replace(/[^0-9.]/g, ''),
+    product.buybox?.price?.amount,
+    product.buybox?.price?.price,
+    
+    // Direct prices
+    product.price?.value,
+    product.price?.raw?.replace(/[^0-9.]/g, ''),
+    product.price?.amount,
+    product.price?.price,
+    
+    // Extracted prices
+    product.extracted_price,
+    product.extracted_price?.value,
+    product.extracted_price?.raw?.replace(/[^0-9.]/g, ''),
+    
+    // Original prices
+    product.original_price?.value,
+    product.original_price?.raw?.replace(/[^0-9.]/g, ''),
+    product.original_price?.amount,
+    
+    // List prices
+    product.list_price?.value,
+    product.list_price?.raw?.replace(/[^0-9.]/g, ''),
+    product.list_price?.amount,
+    
+    // Current prices
+    product.current_price?.value,
+    product.current_price?.raw?.replace(/[^0-9.]/g, ''),
+    product.current_price?.amount,
+    
+    // Direct string prices
+    typeof product.price === 'string' ? product.price.replace(/[^0-9.]/g, '') : null,
+    typeof product.current_price === 'string' ? product.current_price.replace(/[^0-9.]/g, '') : null,
+    
+    // Variant prices
+    product.variants?.[0]?.price?.value,
+    product.variants?.[0]?.price?.raw?.replace(/[^0-9.]/g, ''),
+    product.variants?.[0]?.price?.amount,
   ];
 
   // Find the first valid price
   for (const price of priceLocations) {
     if (price && !isNaN(Number(price)) && Number(price) > 0) {
+      console.log('Found valid price:', price);
       return Number(price);
     }
   }
 
+  // If no price found, try to extract from any string field that might contain a price
+  const stringFields = Object.values(product).filter(val => typeof val === 'string');
+  for (const field of stringFields) {
+    const priceMatch = field.match(/\$?\d+\.?\d*/);
+    if (priceMatch) {
+      const price = priceMatch[0].replace(/[^0-9.]/g, '');
+      if (!isNaN(Number(price)) && Number(price) > 0) {
+        console.log('Found price in string field:', price);
+        return Number(price);
+      }
+    }
+  }
+
+  console.log('No valid price found in product data');
   return null;
 };
 
@@ -85,6 +135,10 @@ export default function ProductPage() {
 
         console.log('Product data:', JSON.stringify(data.product, null, 2));
         setProduct(data.product);
+        
+        // Log the buybox price specifically
+        console.log('Buybox price on fetch:', data.product.buybox?.price);
+        console.log('Price value on fetch:', data.product.buybox?.price?.value);
         
         // Set up images array
         const mainImage = data.product.main_image;
@@ -252,10 +306,7 @@ export default function ProductPage() {
 
               <div className="border-t border-gray-200 pt-6">
                 <h2 className="text-3xl font-bold text-blue-600 mb-4">
-                  {(() => {
-                    const price = selectedVariant ? extractPrice(selectedVariant) : extractPrice(product);
-                    return price ? `$${price.toFixed(2)}` : 'Price not available';
-                  })()}
+                  ${product.buybox?.price?.value?.toFixed(2) || 'Price not available'}
                 </h2>
                 {(selectedVariant?.original_price || product.original_price) && (
                   <p className="text-lg text-gray-500 line-through">
@@ -385,7 +436,7 @@ export default function ProductPage() {
         product={{
           title: product.title,
           variant: selectedVariant?.title,
-          price: selectedVariant ? extractPrice(selectedVariant) || 0 : extractPrice(product) || 0,
+          price: product.buybox?.price?.value || 0,
           thumbnail: selectedVariant?.thumbnail || product.thumbnail || product.main_image,
           asin: selectedVariant?.asin || product.asin,
         }}
