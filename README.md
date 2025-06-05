@@ -17,7 +17,7 @@ A Next.js application that allows users to purchase Amazon products using crypto
 
 - Node.js 18+ and npm/yarn
 - Crossmint API key
-- Search API key (for product search) `searchapi.io`
+- Search API key (for product search) `https://searchapi.io`
 
 ### Environment Variables
 
